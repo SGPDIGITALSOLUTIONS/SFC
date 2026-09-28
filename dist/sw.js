@@ -1,8 +1,9 @@
-const CACHE = 'sfc-shell-v1';
+const CACHE = 'sfc-shell-v2';
 const APP_SHELL = [
   '/',
   '/dist/index.html',
   '/dist/timeline.js',
+  '/dist/persistence.js',
   '/dist/pwa.js',
   '/dist/manifest.webmanifest',
   '/dist/icons/sfc-app-icon.svg'

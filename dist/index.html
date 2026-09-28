@@ -60,7 +60,7 @@
   <script>
     const seed=[{id:1,name:'Sofia',days:18,dates:3,score:72,potential:78,danger:64,chemistry:91,delusion:72,note:'I like her. I do not like that cancellation explanation.',archived:false,events:[['Third date survived','Chemistry +8 · Trust +2','Update'],['Still technically lives with her ex.','Plot twist logged','Plot twist'],['Proceed, but retain legal counsel.','Friend raised concern','Concern']]},{id:2,name:'Maya',days:6,dates:1,score:83,potential:86,danger:22,chemistry:80,delusion:34,note:'Suspiciously healthy. Try not to manufacture a problem.',archived:false,events:[['She chose the place and booked it.','Competence detected','Green flag']]},{id:3,name:'Chloe',days:31,dates:4,score:48,potential:41,danger:92,chemistry:96,delusion:91,note:'This is not chemistry. This is a controlled fire.',archived:false,events:[['Reappeared at 11:47pm.','Nature is healing','Plot twist'],['Called astrology “data science.”','Ick entered','Ick']]}];
     let cases=JSON.parse(localStorage.getItem('sfc-cases')||'null')||seed;let activeId=Number(localStorage.getItem('sfc-active'))||cases[0].id;let role=localStorage.getItem('sfc-role')||'owner';
-    const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);const save=()=>{localStorage.setItem('sfc-cases',JSON.stringify(cases));localStorage.setItem('sfc-active',activeId)};const current=()=>cases.find(x=>x.id===activeId)||cases[0];
+    const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);const save=()=>{localStorage.setItem('sfc-cases',JSON.stringify(cases));localStorage.setItem('sfc-active',activeId);window.sfcPersist?.()};const current=()=>cases.find(x=>x.id===activeId)||cases[0];
     function labelFor(c){if(c.archived)return['Case closed','The evidence has spoken'];if(c.potential>70&&c.danger<40)return['Suspiciously healthy','Try not to ruin it for sport'];if(c.potential>65&&c.danger>=40)return['Main plot energy','Promising, with suspicious undertones'];if(c.potential<60&&c.danger>70)return['Absolutely your type','The court advises protective clothing'];return['Pending investigation','Insufficient evidence, continue snooping']}
     function delusionText(n){return n>85?'You are now writing unauthorised fan fiction.':n>65?'You are explaining away evidence.':n>40?'Hopeful, but still legally competent.':'Disturbingly grounded. Are you feeling well?'}
     function renderRole(){document.body.dataset.role=role;$('#ownerRole').classList.toggle('active',role==='owner');$('#friendRole').classList.toggle('active',role==='friend');$('#roleIcon').textContent=role==='owner'?'✎':'⚖';$('#roleTitle').textContent=role==='owner'?'You add the people and tell the story.':'She reviews the story and gives the verdict.';$('#roleDescription').textContent=role==='owner'?'Create a case, log dates and messages, and add private notes. Your friend reviews what you share.':'Read the shared timeline, score the situation, raise concerns, and Chuck when necessary.';localStorage.setItem('sfc-role',role);renderRoleHome(current())}
@@ -147,6 +147,7 @@
         gate.classList.add('hidden');
         document.body.classList.remove('auth-open');
         appShell.inert = false;
+        window.dispatchEvent(new CustomEvent('sfc:authenticated', { detail: user }));
         const actions = document.querySelector('.top-actions');
         const pill = document.createElement('span');
         pill.className = 'account-pill';
@@ -197,6 +198,7 @@
     })();
   </script>
   <script src="/dist/timeline.js"></script>
+  <script src="/dist/persistence.js"></script>
   <script src="/dist/pwa.js"></script>
 </body>
 </html>
