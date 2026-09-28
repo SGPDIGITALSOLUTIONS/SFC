@@ -1,0 +1,14 @@
+{
+  "name": "sfc",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:migrate": "node --env-file=.env.local scripts/migrate.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "latest"
+  },
+  "devDependencies": {
+    "vercel": "50.13.2"
+  }
+}
