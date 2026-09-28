@@ -3,6 +3,7 @@
   let saving = false;
   let dirty = false;
   let saveTimer;
+  let lastUpdatedAt = null;
 
   function cacheLocally() {
     try {
@@ -30,7 +31,8 @@
     saving = true;
     dirty = false;
     try {
-      await request('PUT', { cases });
+      const result = await request('PUT', { cases });
+      lastUpdatedAt = result.updatedAt || lastUpdatedAt;
     } catch (error) {
       if (typeof toast === 'function') toast(error.message || 'Your latest change is only saved on this device for now.');
     } finally {
@@ -50,6 +52,7 @@
     const caseIdsAtStart = new Set(cases.map(item => item.id));
     try {
       const state = await request('GET');
+      lastUpdatedAt = state.updatedAt || null;
       if (state.exists && Array.isArray(state.cases) && state.cases.length) {
         const casesAddedWhileLoading = cases.filter(item => !caseIdsAtStart.has(item.id));
         const remoteIds = new Set(state.cases.map(item => item.id));
@@ -67,4 +70,23 @@
   }
 
   window.addEventListener('sfc:authenticated', hydrate, { once: true });
+
+  async function refreshSharedCases() {
+    if (!hydrated || saving || dirty) return;
+    try {
+      const state = await request('GET');
+      if (!state.exists || !Array.isArray(state.cases) || !state.cases.length || state.updatedAt === lastUpdatedAt) return;
+      cases = state.cases;
+      if (!cases.some(item => item.id === activeId)) activeId = cases[0].id;
+      lastUpdatedAt = state.updatedAt;
+      cacheLocally();
+      render();
+      if (typeof toast === 'function') toast('Shared case file updated.');
+    } catch {}
+  }
+
+  window.addEventListener('focus', refreshSharedCases);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshSharedCases();
+  });
 })();

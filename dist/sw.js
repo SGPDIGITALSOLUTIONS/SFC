@@ -1,4 +1,4 @@
-const CACHE = 'sfc-shell-v5';
+const CACHE = 'sfc-shell-v6';
 const APP_SHELL = [
   '/',
   '/dist/index.html',
