@@ -4,6 +4,16 @@
   let dirty = false;
   let saveTimer;
 
+  function cacheLocally() {
+    try {
+      localStorage.setItem('sfc-cases', JSON.stringify(cases));
+      localStorage.setItem('sfc-active', activeId);
+    } catch {
+      localStorage.removeItem('sfc-cases');
+      localStorage.setItem('sfc-active', activeId);
+    }
+  }
+
   async function request(method, body) {
     const response = await fetch('/api/cases', {
       method,
@@ -45,8 +55,7 @@
         const remoteIds = new Set(state.cases.map(item => item.id));
         cases = [...state.cases, ...casesAddedWhileLoading.filter(item => !remoteIds.has(item.id))];
         if (!cases.some(item => item.id === activeId)) activeId = cases[0].id;
-        localStorage.setItem('sfc-cases', JSON.stringify(cases));
-        localStorage.setItem('sfc-active', activeId);
+        cacheLocally();
       }
       hydrated = true;
       if (!state.exists || dirty) await upload();
