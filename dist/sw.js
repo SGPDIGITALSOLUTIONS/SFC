@@ -1,10 +1,11 @@
-const CACHE = 'sfc-shell-v3';
+const CACHE = 'sfc-shell-v4';
 const APP_SHELL = [
   '/',
   '/dist/index.html',
   '/dist/timeline.js',
   '/dist/persistence.js',
   '/dist/pwa.js',
+  '/dist/notifications.js',
   '/dist/manifest.webmanifest',
   '/dist/icons/sfc-app-icon.svg'
 ];
@@ -38,4 +39,22 @@ self.addEventListener('fetch', event => {
       return response;
     }))
   );
+});
+
+self.addEventListener('push', event => {
+  const data = event.data?.json() || {};
+  event.waitUntil(self.registration.showNotification(data.title || 'SFC update', {
+    body: data.body || 'There is new activity in your shared case file.',
+    icon: '/dist/icons/sfc-app-icon.svg',
+    badge: '/dist/icons/sfc-app-icon.svg',
+    data: { url: data.url || '/' }
+  }));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windows => {
+    const existing = windows.find(client => new URL(client.url).origin === self.location.origin);
+    return existing ? existing.focus() : clients.openWindow(event.notification.data?.url || '/');
+  }));
 });
