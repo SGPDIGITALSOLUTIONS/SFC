@@ -49,4 +49,13 @@ await sql`CREATE TABLE IF NOT EXISTS push_subscriptions (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 )`;
 await sql`CREATE INDEX IF NOT EXISTS push_subscriptions_user_id_idx ON push_subscriptions(user_id)`;
+await sql`CREATE TABLE IF NOT EXISTS workspace_case_revisions (
+  id BIGSERIAL PRIMARY KEY,
+  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  cases JSONB NOT NULL,
+  changed_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+)`;
+await sql`CREATE INDEX IF NOT EXISTS workspace_case_revisions_workspace_created_idx
+  ON workspace_case_revisions(workspace_id, created_at DESC)`;
 console.log('SFC database is ready.');

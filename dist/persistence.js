@@ -22,7 +22,11 @@
       body: body ? JSON.stringify(body) : undefined
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Could not reach the shared case file.');
+    if (!response.ok) {
+      const error = new Error(data.error || 'Could not reach the shared case file.');
+      error.status = response.status;
+      throw error;
+    }
     return data;
   }
 
@@ -31,7 +35,7 @@
     saving = true;
     dirty = false;
     try {
-      const result = await request('PUT', { cases });
+      const result = await request('PUT', { cases, baseUpdatedAt: lastUpdatedAt });
       lastUpdatedAt = result.updatedAt || lastUpdatedAt;
     } catch (error) {
       if (typeof toast === 'function') toast(error.message || 'Your latest change is only saved on this device for now.');

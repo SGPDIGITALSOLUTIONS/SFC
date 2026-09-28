@@ -2,6 +2,7 @@ import { getViewer, json, readBody, sql } from './_lib.js';
 import webpush from 'web-push';
 
 const MAX_STATE_BYTES = 8 * 1024 * 1024;
+const timestamp = value => value ? new Date(value).toISOString() : null;
 
 function activityAdded(before = [], after = []) {
   const prior = new Map(before.map(item => [item.id, item]));
@@ -51,7 +52,7 @@ export default async function handler(req, res) {
       return json(res, 200, {
         exists: Boolean(rows[0]),
         cases: rows[0]?.cases || null,
-        updatedAt: rows[0]?.updated_at || null
+        updatedAt: timestamp(rows[0]?.updated_at)
       });
     }
 
@@ -62,8 +63,18 @@ export default async function handler(req, res) {
       if (Buffer.byteLength(serialized, 'utf8') > MAX_STATE_BYTES) {
         return json(res, 413, { error: 'Your case file is too large to save. Keep images under 2 MB and remove an attachment before trying again.' });
       }
-      const existing = await sql`SELECT cases FROM workspace_case_state WHERE workspace_id = ${viewer.workspace_id} LIMIT 1`;
+      const existing = await sql`SELECT cases, updated_at FROM workspace_case_state WHERE workspace_id = ${viewer.workspace_id} LIMIT 1`;
+      const currentUpdatedAt = timestamp(existing[0]?.updated_at);
+      if (existing[0] && body.baseUpdatedAt !== currentUpdatedAt) {
+        return json(res, 409, { error: 'This copy of SFC is out of date. Refresh before saving so no one’s case gets overwritten.', updatedAt: currentUpdatedAt });
+      }
+      if (existing[0] && JSON.stringify(existing[0].cases) === serialized) {
+        return json(res, 200, { ok: true, updatedAt: currentUpdatedAt });
+      }
       const shouldNotify = Boolean(existing[0]) && activityAdded(existing[0].cases || [], body.cases);
+      if (existing[0]) await sql`
+        INSERT INTO workspace_case_revisions (workspace_id, cases, changed_by)
+        VALUES (${viewer.workspace_id}, ${JSON.stringify(existing[0].cases)}::jsonb, ${viewer.id})`;
       const rows = await sql`
         INSERT INTO workspace_case_state (workspace_id, cases, updated_by, updated_at)
         VALUES (${viewer.workspace_id}, ${serialized}::jsonb, ${viewer.id}, NOW())
@@ -71,7 +82,7 @@ export default async function handler(req, res) {
           SET cases = EXCLUDED.cases, updated_by = EXCLUDED.updated_by, updated_at = NOW()
         RETURNING updated_at`;
       if (shouldNotify) await notifyOtherMember(viewer);
-      return json(res, 200, { ok: true, updatedAt: rows[0].updated_at });
+      return json(res, 200, { ok: true, updatedAt: timestamp(rows[0].updated_at) });
     }
 
     res.setHeader('Allow', 'GET, PUT');
