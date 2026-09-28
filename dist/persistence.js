@@ -30,23 +30,26 @@
   }
 
   window.sfcPersist = () => {
-    if (!hydrated) return;
     dirty = true;
+    if (!hydrated) return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(upload, 450);
   };
 
   async function hydrate() {
+    const caseIdsAtStart = new Set(cases.map(item => item.id));
     try {
       const state = await request('GET');
       if (state.exists && Array.isArray(state.cases) && state.cases.length) {
-        cases = state.cases;
+        const casesAddedWhileLoading = cases.filter(item => !caseIdsAtStart.has(item.id));
+        const remoteIds = new Set(state.cases.map(item => item.id));
+        cases = [...state.cases, ...casesAddedWhileLoading.filter(item => !remoteIds.has(item.id))];
         if (!cases.some(item => item.id === activeId)) activeId = cases[0].id;
         localStorage.setItem('sfc-cases', JSON.stringify(cases));
         localStorage.setItem('sfc-active', activeId);
       }
       hydrated = true;
-      if (!state.exists) await upload();
+      if (!state.exists || dirty) await upload();
       render();
     } catch (error) {
       hydrated = true;
