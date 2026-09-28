@@ -1,0 +1,20 @@
+{
+  "name": "SFC — Private Dating Intelligence",
+  "short_name": "SFC",
+  "description": "A private review desk for your dating evidence.",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#160b12",
+  "theme_color": "#160b12",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/dist/icons/sfc-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
